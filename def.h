@@ -1,4 +1,5 @@
 #include "msp430g2553.h"
+#include "stdlib.h"
 
 #define BUTTON_0		BIT4
 #define BUTTON_1		BIT5
@@ -14,3 +15,4 @@
 
 volatile int gTicksToNextStep = 0;
 volatile int gTicksToEnableButton = 0;
+volatile int gTicksForSeed = 0;
