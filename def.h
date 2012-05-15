@@ -11,3 +11,6 @@
 #define TIMER_100MS		1564
 
 #define TIME_TO_ENABLE_BUTTON	5000
+
+volatile int gTicksToNextStep = 0;
+volatile int gTicksToEnableButton = 0;

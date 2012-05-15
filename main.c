@@ -1,9 +1,6 @@
 #include "def.h"
 #include "logic.h"
 
-volatile int gTicks = 0;
-volatile int gTicksToEnableButton = 0;
-
 int main(void)
 {
 	// Zatrzymanie watchdog timera
@@ -49,45 +46,44 @@ int main(void)
 	}
 }
 
-// Przerwanie odpalane 15625 razy na sekunde.
-#pragma vector=WDT_VECTOR
-__interrupt void watchdog_timer(void)
-{
-	gTicks++;
-	if (gTicksToEnableButton > 0)
-		gTicksToEnableButton--;
-
-	if (gTicks >= TIMER_SECOND)
-	{
-		P1OUT ^= LED_GREEN;
-		P1OUT ^= LED_RED;
-		gTicks = 0;
-	}
-}
-
-// Przerwanie odpalane po kliknieciu dowolnego przycisku z portu 2
+/// Przerwanie odpalane po kliknieciu dowolnego przycisku z portu 2
 #pragma vector=PORT2_VECTOR
 __interrupt void port2_buttons(void)
 {
+	// Nie zezwalam na zbyt czeste klikanie przyciskow.
 	if (gTicksToEnableButton > 0)
 	{
 		P2IFG = 0;
 		return;
 	}
 
+	// Obsluga przycisku - wyczyszczenie flagi przerwania, ustawienie czasu do kolejnego mozliwego klikniecia i odpalenie odpowiedniej funkcji obslugi.
 	if (P2IFG & BUTTON_0)
 	{
-		// Wyczyszczenie flagi przerwania [?]niekoniecznie dobre, pewnie powinienem czysci tylko odpowiedni bit
 		P2IFG = 0;
 		gTicksToEnableButton = TIME_TO_ENABLE_BUTTON;
 		ButtonPressed(0);
 	}
 
+	// Obsluga drugiego przycisku.
 	if (P2IFG & BUTTON_1)
 	{
-		// Wyczyszczenie flagi przerwania [?]niekoniecznie dobre, pewnie powinienem czysci tylko odpowiedni bit
 		P2IFG = 0;
 		gTicksToEnableButton = TIME_TO_ENABLE_BUTTON;
 		ButtonPressed(1);
 	}
+}
+
+/// Przerwanie odpalane 15625 razy na sekunde.
+#pragma vector=WDT_VECTOR
+__interrupt void watchdog_timer(void)
+{
+	if (gTicksToNextStep > 0)
+		gTicksToNextStep--;
+
+	if (gTicksToEnableButton > 0)
+		gTicksToEnableButton--;
+
+	if (gTicksToNextStep <= 0)
+		NextStep();
 }
