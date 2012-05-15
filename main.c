@@ -1,13 +1,8 @@
-#include "msp430g2553.h"
-
-#define BUTTON_0	BIT4
-#define BUTTON_1	BIT5
-#define LED_0		BIT1
-#define LED_1		BIT2
-#define LED_RED		BIT0
-#define LED_GREEN	BIT6
+#include "def.h"
+#include "logic.h"
 
 volatile int gTicks = 0;
+volatile int gTicksToEnableButton = 0;
 
 int main(void)
 {
@@ -56,11 +51,13 @@ int main(void)
 
 // Przerwanie odpalane 15625 razy na sekunde.
 #pragma vector=WDT_VECTOR
-__interrupt void wdt_trigger(void)
+__interrupt void watchdog_timer(void)
 {
 	gTicks++;
+	if (gTicksToEnableButton > 0)
+		gTicksToEnableButton--;
 
-	if (gTicks >= 15635)
+	if (gTicks >= TIMER_SECOND)
 	{
 		P1OUT ^= LED_GREEN;
 		P1OUT ^= LED_RED;
@@ -70,20 +67,27 @@ __interrupt void wdt_trigger(void)
 
 // Przerwanie odpalane po kliknieciu dowolnego przycisku z portu 2
 #pragma vector=PORT2_VECTOR
-__interrupt void Port_1(void)
+__interrupt void port2_buttons(void)
 {
+	if (gTicksToEnableButton > 0)
+	{
+		P2IFG = 0;
+		return;
+	}
 
 	if (P2IFG & BUTTON_0)
 	{
 		// Wyczyszczenie flagi przerwania [?]niekoniecznie dobre, pewnie powinienem czysci tylko odpowiedni bit
 		P2IFG = 0;
-		P1OUT ^= LED_0;
+		gTicksToEnableButton = TIME_TO_ENABLE_BUTTON;
+		ButtonPressed(0);
 	}
 
 	if (P2IFG & BUTTON_1)
 	{
+		// Wyczyszczenie flagi przerwania [?]niekoniecznie dobre, pewnie powinienem czysci tylko odpowiedni bit
 		P2IFG = 0;
-		P1OUT ^= LED_1;
+		gTicksToEnableButton = TIME_TO_ENABLE_BUTTON;
+		ButtonPressed(1);
 	}
-
 }
