@@ -85,9 +85,6 @@ __interrupt void watchdog_timer(void)
 	if (gTicksToEnableButton > 0)
 		gTicksToEnableButton--;
 
-	//if (gTicksForSeed > 100)
-	//	gTicksForSeed = 0;
-
 	if (gTicksToNextStep <= 0)
 		NextStep();
 }

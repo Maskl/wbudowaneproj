@@ -15,4 +15,3 @@
 
 volatile int gTicksToNextStep = 0;
 volatile int gTicksToEnableButton = 0;
-volatile int gTicksForSeed = 0;
