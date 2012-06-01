@@ -24,6 +24,7 @@ void ConfigureNextState(int state, int ticksToNextStep)
 /// Kolejne zdarzenie w logice gry - gdzies wewnatrz trzeba wywolac 'ConfigureNextState' by ponownie tu trafic za odpowiednia ilosc czasu.
 void NextStep()
 {
+	return;
 	switch (gState)
 	{
 		// Przed rozpoczeciem gry mruganie diodami.
@@ -93,6 +94,16 @@ void NextStep()
 /// Reakcja na klikniecie przycisku.
 void ButtonPressed(int buttonNum)
 {
+
+	if (buttonNum == 0)
+		P1OUT = BIT0;
+	if (buttonNum == 1)
+		P1OUT = BIT1;
+	if (buttonNum == 2)
+		P1OUT = BIT2;
+
+	return;
+
 	switch (gState)
 	{
 		// Dowolny przycisk rozpoczyna gre.
