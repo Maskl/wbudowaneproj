@@ -1,14 +1,14 @@
 #define STATE_NULL -1
 #define STATE_BEFORE_START 0
 #define STATE_SHOW_SEQUENCE 1
-#define STATE_WAIT_FOR_PLAYER_REPEAT 3
-#define STATE_LOOSE 4
+#define STATE_WAIT_FOR_PLAYER_REPEAT 2
+#define STATE_LOOSE 3
 
 volatile int gState = STATE_NULL; // Aktualny stan w ktorym znajduje sie gra.
 volatile int gIsBreak = 0;
 volatile int gSequence[] = {0, 2, 1, 2, 2, 0, 1, 1, 2, 1, 2, 0, 2, 1, 1, 0, 1, 0}; // Sekwencja do pokazania, bedzie generowana.
 volatile int gSequenceStep = 0; // Ktory etap sekwencji (wyswietlany lub wprowadza gracz).
-volatile int gLevel = 0; // Jak dluga sekwencje gracz bedzie musial powtorzyc.
+volatile int gLevel = 1; // Jak dluga sekwencje gracz bedzie musial powtorzyc.
 
 volatile int gSpeed = 3;
 
@@ -97,6 +97,37 @@ void NextStep();
 void ConfigureNextState(int state);
 
 
+/// Pomocnicza procedura - Ustawienie jaki ma byc kolejny krok gry.
+void ConfigureNextState(int state)
+{
+	gState = state;
+
+	switch (state)
+	{
+		case STATE_BEFORE_START:
+		{
+			ShowSpeedOnYellowLeds();
+			gTicksToNextStep = -1;
+		}
+		break;
+
+		case STATE_SHOW_SEQUENCE:
+		{
+			gIsBreak = 0;
+			ShowLevelOnYellowLeds(gLevel);
+			gTicksToNextStep = TIMER_SECOND / 2;
+		}
+		break;
+
+		case STATE_WAIT_FOR_PLAYER_REPEAT:
+		{
+			ShowColorLed(LED_NONE);
+			gTicksToNextStep = -1;
+			gSequenceStep = 0;
+		}
+	}
+}
+
 /// Kolejne zdarzenie w logice gry - gdzies wewnatrz trzeba wywolac 'ConfigureNextState' by ponownie tu trafic za odpowiednia ilosc czasu.
 void NextStep()
 {
@@ -115,8 +146,14 @@ void NextStep()
 			if (!gIsBreak)
 			{
 				int ledToShow = gSequence[gSequenceStep++];
+
+				if (gSequenceStep > gLevel)
+				{
+					ConfigureNextState(STATE_WAIT_FOR_PLAYER_REPEAT);
+					break;
+				}
+
 				ShowColorLed(ledToShow + 1);
-				ShowLevelOnYellowLeds(gSequenceStep);
 				gTicksToNextStep = TIMER_SECOND * 2 / gSpeed;
 			}
 			else
@@ -126,9 +163,13 @@ void NextStep()
 			}
 
 			gIsBreak = (gIsBreak + 1) % 2;
+		}
+		break;
 
-
-
+		case STATE_WAIT_FOR_PLAYER_REPEAT:
+		{
+			ShowColorLed(LED_NONE);
+			gTicksToNextStep = -1;
 		}
 		break;
 	}
@@ -137,27 +178,6 @@ void NextStep()
 }
 
 
-/// Pomocnicza procedura - Ustawienie jaki ma byc kolejny krok gry.
-void ConfigureNextState(int state)
-{
-	gState = state;
-
-	switch (state)
-	{
-		case STATE_BEFORE_START:
-		{
-			ShowSpeedOnYellowLeds();
-			gTicksToNextStep = -1;
-		}
-		break;
-
-		case STATE_SHOW_SEQUENCE:
-		{
-			NextStep();
-		}
-		break;
-	}
-}
 
 
 /// Reakcja na klikniecie przycisku.
@@ -191,11 +211,50 @@ void ButtonPressed(int buttonNum)
 
 			if (buttonNum == BUTTON_START)
 			{
-				gLevel = 0;
+				gLevel = 1;
 				gSequenceStep = 0;
 				ConfigureNextState(STATE_SHOW_SEQUENCE);
 			}
 		}
 		break;
+
+		// Przed rozpoczeciem gry mruganie diodami.
+		case STATE_WAIT_FOR_PLAYER_REPEAT:
+		{
+			int ledToSelect = gSequence[gSequenceStep++] + 1;
+			int ledSelected;
+
+			if (buttonNum == BUTTON_R)
+				ledSelected = LED_R;
+
+			if (buttonNum == BUTTON_G)
+				ledSelected = LED_G;
+
+			if (buttonNum == BUTTON_B)
+				ledSelected = LED_B;
+
+
+			// Czy gracz nadusil odpowiedni przycisk?
+			if (ledToSelect == ledSelected)
+			{
+				ShowColorLed(ledSelected);
+				gTicksToNextStep = TIMER_SECOND / 5;
+
+				// Dodatkowo prowadzil juz cala sekwencje.
+				if (gSequenceStep >= gLevel)
+				{
+					gLevel++;
+					gSequenceStep = 0;
+					ConfigureNextState(STATE_SHOW_SEQUENCE);
+				}
+			}
+			else
+			{
+			//	ConfigureNextState(STATE_BEFORE_START);
+			}
+		}
+		break;
+
+
 	}
 }
