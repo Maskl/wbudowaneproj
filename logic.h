@@ -14,6 +14,8 @@ volatile int gLevel = 0; // Jak dluga sekwencje gracz bedzie musial powtorzyc.
 /// Pomocnicza procedura - Ustawienie jaki ma byc kolejny krok gry.
 void ConfigureNextState(int state, int ticksToNextStep)
 {
+	return;
+
 	if (state >= 0)
 		gState = state;
 
@@ -25,7 +27,8 @@ void ConfigureNextState(int state, int ticksToNextStep)
 void NextStep()
 {
 	return;
-	switch (gState)
+
+	/*switch (gState)
 	{
 		// Przed rozpoczeciem gry mruganie diodami.
 		case STATE_BEFORE_START:
@@ -87,7 +90,7 @@ void NextStep()
 			ConfigureNextState(WITHOUT_CHANGES, TIMER_100MS);
 		}
 		break;
-	}
+	}*/
 }
 
 
@@ -95,16 +98,21 @@ void NextStep()
 void ButtonPressed(int buttonNum)
 {
 
-	if (buttonNum == 0)
-		P1OUT = BIT0;
 	if (buttonNum == 1)
-		P1OUT = BIT1;
+		P1OUT |= LED_R;
+
 	if (buttonNum == 2)
-		P1OUT = BIT2;
+		P1OUT |= LED_G;
+
+	if (buttonNum == 3)
+		P1OUT |= LED_B;
+
+	if (buttonNum == 0)
+		P1OUT |= LED_Y_1;
 
 	return;
 
-	switch (gState)
+	/*switch (gState)
 	{
 		// Dowolny przycisk rozpoczyna gre.
 		case STATE_BEFORE_START:
@@ -147,5 +155,5 @@ void ButtonPressed(int buttonNum)
 			}
 		}
 		break;
-	}
+	}*/
 }

@@ -1,10 +1,10 @@
 ******************************************************************************
                   MSP430 Linker PC v4.0.0                      
 ******************************************************************************
->> Linked Fri Jun 01 20:21:03 2012
+>> Linked Wed Jun 06 12:04:56 2012
 
 OUTPUT FILE NAME:   <wbudowaneproj.out>
-ENTRY POINT SYMBOL: "_c_int00"  address: 0000c10e
+ENTRY POINT SYMBOL: "_c_int00"  address: 0000c1a0
 
 
 MEMORY CONFIGURATION
@@ -19,11 +19,11 @@ MEMORY CONFIGURATION
   INFOC                 00001040   00000040  00000000  00000040  RWIX
   INFOB                 00001080   00000040  00000000  00000040  RWIX
   INFOA                 000010c0   00000040  00000000  00000040  RWIX
-  FLASH                 0000c000   00003fe0  000001e0  00003e00  RWIX
+  FLASH                 0000c000   00003fe0  0000026e  00003d72  RWIX
   INT00                 0000ffe0   00000002  00000000  00000002  RWIX
   INT01                 0000ffe2   00000002  00000000  00000002  RWIX
   INT02                 0000ffe4   00000002  00000002  00000000  RWIX
-  INT03                 0000ffe6   00000002  00000000  00000002  RWIX
+  INT03                 0000ffe6   00000002  00000002  00000000  RWIX
   INT04                 0000ffe8   00000002  00000000  00000002  RWIX
   INT05                 0000ffea   00000002  00000000  00000002  RWIX
   INT06                 0000ffec   00000002  00000000  00000002  RWIX
@@ -54,25 +54,30 @@ section   page    origin      length       input sections
                   000003b0    00000002     rts430.lib : boot.obj (.stack)
                   000003b2    0000004e     --HOLE--
 
-.text      0    0000c000    00000198     
-                  0000c000    00000068     main.obj (.text:port1_buttons)
-                  0000c068    00000060     main.obj (.text:main)
-                  0000c0c8    00000046     rts430.lib : autoinit.obj (.text:_auto_init)
-                  0000c10e    00000026                : boot.obj (.text:_c_int00_noexit)
-                  0000c134    0000001e     main.obj (.text:watchdog_timer)
-                  0000c152    0000001a     main.obj (.text:ButtonPressed)
-                  0000c16c    00000012     rts430.lib : memcpy.obj (.text:memcpy)
-                  0000c17e    00000010                : epilog.obj (.text)
-                  0000c18e    00000004                : pre_init.obj (.text:_system_pre_init)
-                  0000c192    00000004                : exit.obj (.text:abort)
-                  0000c196    00000002                : _lock.obj (.text:_nop)
+.text      0    0000c000    00000226     
+                  0000c000    00000090     main.obj (.text:main)
+                  0000c090    0000006a     main.obj (.text:port1_buttons)
+                  0000c0fa    00000046     rts430.lib : autoinit.obj (.text:_auto_init)
+                  0000c140    0000003a     main.obj (.text:port2_buttons)
+                  0000c17a    00000026     main.obj (.text:ButtonPressed)
+                  0000c1a0    00000026     rts430.lib : boot.obj (.text:_c_int00_noexit)
+                  0000c1c6    0000001e     main.obj (.text:watchdog_timer)
+                  0000c1e4    00000016     main.obj (.text:clearButtons)
+                  0000c1fa    00000012     rts430.lib : memcpy.obj (.text:memcpy)
+                  0000c20c    00000010                : epilog.obj (.text)
+                  0000c21c    00000004                : pre_init.obj (.text:_system_pre_init)
+                  0000c220    00000004                : exit.obj (.text:abort)
+                  0000c224    00000002                : _lock.obj (.text:_nop)
 
-.cinit     0    0000c198    00000048     
-                  0000c198    00000046     main.obj (.cinit)
-                  0000c1de    00000002     --HOLE-- [fill = 0]
+.cinit     0    0000c226    00000048     
+                  0000c226    00000046     main.obj (.cinit)
+                  0000c26c    00000002     --HOLE-- [fill = 0]
 
 .int02     0    0000ffe4    00000002     
                   0000ffe4    00000002     main.obj (.int02)
+
+.int03     0    0000ffe6    00000002     
+                  0000ffe6    00000002     main.obj (.int03)
 
 .int10     0    0000fff4    00000002     
                   0000fff4    00000002     main.obj (.int10)
@@ -97,8 +102,8 @@ address    name
 00000057   BCSCTL1
 00000058   BCSCTL2
 00000053   BCSCTL3
-0000c152   ButtonPressed
-0000c192   C$$EXIT
+0000c17a   ButtonPressed
+0000c220   C$$EXIT
 00000059   CACTL1
 0000005a   CACTL2
 000010fb   CALBC1_12MHZ
@@ -190,45 +195,47 @@ address    name
 ffffffff   __binit__
 00000200   __bss__
 ffffffff   __c_args__
-0000c198   __cinit__
+0000c226   __cinit__
 00000236   __end__
-0000c198   __etext__
+0000c226   __etext__
 ffffffff   __pinit__
 0000c000   __text__
-0000c0c8   _auto_init
-0000c10e   _c_int00
-0000c10e   _c_int00_noexit
+0000c0fa   _auto_init
+0000c1a0   _c_int00
+0000c1a0   _c_int00_noexit
 00000232   _cleanup_ptr
 00000234   _dtors_ptr
 0000022e   _lock
-0000c196   _nop
+0000c224   _nop
 0000fffe   _reset_vector
 000003b0   _stack
-0000c18e   _system_pre_init
+0000c21c   _system_pre_init
 00000230   _unlock
-0000c192   abort
+0000c220   abort
 ffffffff   binit
-0000c198   cinit
+0000c226   cinit
+0000c1e4   clearButtons
 00000236   end
-0000c198   etext
-0000c18a   func_epilog_1
-0000c188   func_epilog_2
-0000c186   func_epilog_3
-0000c184   func_epilog_4
-0000c182   func_epilog_5
-0000c180   func_epilog_6
-0000c17e   func_epilog_7
+0000c226   etext
+0000c218   func_epilog_1
+0000c216   func_epilog_2
+0000c214   func_epilog_3
+0000c212   func_epilog_4
+0000c210   func_epilog_5
+0000c20e   func_epilog_6
+0000c20c   func_epilog_7
 0000022c   gLevel
 00000206   gSequence
 0000022a   gSequenceStep
 00000204   gState
 00000202   gTicksToEnableButton
 00000200   gTicksToNextStep
-0000c068   main
-0000c16c   memcpy
+0000c000   main
+0000c1fa   memcpy
 ffffffff   pinit
-0000c000   port1_buttons
-0000c134   watchdog_timer
+0000c090   port1_buttons
+0000c140   port2_buttons
+0000c1c6   watchdog_timer
 
 
 GLOBAL SYMBOLS: SORTED BY Symbol Address 
@@ -350,29 +357,31 @@ address    name
 000010ff   CALBC1_1MHZ
 0000c000   .text
 0000c000   __text__
-0000c000   port1_buttons
-0000c068   main
-0000c0c8   _auto_init
-0000c10e   _c_int00
-0000c10e   _c_int00_noexit
-0000c134   watchdog_timer
-0000c152   ButtonPressed
-0000c16c   memcpy
-0000c17e   func_epilog_7
-0000c180   func_epilog_6
-0000c182   func_epilog_5
-0000c184   func_epilog_4
-0000c186   func_epilog_3
-0000c188   func_epilog_2
-0000c18a   func_epilog_1
-0000c18e   _system_pre_init
-0000c192   C$$EXIT
-0000c192   abort
-0000c196   _nop
-0000c198   __cinit__
-0000c198   __etext__
-0000c198   cinit
-0000c198   etext
+0000c000   main
+0000c090   port1_buttons
+0000c0fa   _auto_init
+0000c140   port2_buttons
+0000c17a   ButtonPressed
+0000c1a0   _c_int00
+0000c1a0   _c_int00_noexit
+0000c1c6   watchdog_timer
+0000c1e4   clearButtons
+0000c1fa   memcpy
+0000c20c   func_epilog_7
+0000c20e   func_epilog_6
+0000c210   func_epilog_5
+0000c212   func_epilog_4
+0000c214   func_epilog_3
+0000c216   func_epilog_2
+0000c218   func_epilog_1
+0000c21c   _system_pre_init
+0000c220   C$$EXIT
+0000c220   abort
+0000c224   _nop
+0000c226   __cinit__
+0000c226   __etext__
+0000c226   cinit
+0000c226   etext
 0000fffe   _reset_vector
 ffffffff   __binit__
 ffffffff   __c_args__
@@ -380,4 +389,4 @@ ffffffff   __pinit__
 ffffffff   binit
 ffffffff   pinit
 
-[144 symbols]
+[146 symbols]
