@@ -107,6 +107,7 @@ void ConfigureNextState(int state)
 	{
 		case STATE_BEFORE_START:
 		{
+			ShowColorLed(LED_NONE);
 			ShowSpeedOnYellowLeds();
 			gTicksToNextStep = -1;
 		}
@@ -258,6 +259,12 @@ void ButtonPressed(int buttonNum)
 		// Przed rozpoczeciem gry mruganie diodami.
 		case STATE_WAIT_FOR_PLAYER_REPEAT:
 		{
+			if (buttonNum == BUTTON_START)
+			{
+				ConfigureNextState(STATE_BEFORE_START);
+				return;
+			}
+
 			int ledToSelect = gSequence[gSequenceStep++] + 1;
 			int ledSelected;
 
@@ -298,6 +305,14 @@ void ButtonPressed(int buttonNum)
 		}
 		break;
 
-
+		default:
+		{
+			if (buttonNum == BUTTON_START)
+			{
+				ConfigureNextState(STATE_BEFORE_START);
+				return;
+			}
+		}
+		break;
 	}
 }
