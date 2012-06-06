@@ -5,8 +5,8 @@
 #define STATE_LOOSE 4
 
 volatile int gState = STATE_NULL; // Aktualny stan w ktorym znajduje sie gra.
-
-volatile int gSequence[] = {0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0}; // Sekwencja do pokazania, bedzie generowana.
+volatile int gIsBreak = 0;
+volatile int gSequence[] = {0, 2, 1, 2, 2, 0, 1, 1, 2, 1, 2, 0, 2, 1, 1, 0, 1, 0}; // Sekwencja do pokazania, bedzie generowana.
 volatile int gSequenceStep = 0; // Ktory etap sekwencji (wyswietlany lub wprowadza gracz).
 volatile int gLevel = 0; // Jak dluga sekwencje gracz bedzie musial powtorzyc.
 
@@ -52,14 +52,45 @@ void ShowSpeedOnYellowLeds()
 			(gSpeed > 4) ? LED_ON : LED_OFF);
 }
 
-void ShowLevelOnYellowLeds()
+void ShowLevelOnYellowLeds(int level)
 {
 	SetYellowLeds(
-			(gSpeed == 1) ? LED_ON : LED_OFF,
-			(gSpeed == 2) ? LED_ON : LED_OFF,
-			(gSpeed == 3) ? LED_ON : LED_OFF,
-			(gSpeed == 4) ? LED_ON : LED_OFF,
-			(gSpeed == 5) ? LED_ON : LED_OFF);
+			((level & 1 ) > 0) ? LED_ON : LED_OFF,
+			((level & 2 ) > 0) ? LED_ON : LED_OFF,
+			((level & 4 ) > 0) ? LED_ON : LED_OFF,
+			((level & 8 ) > 0) ? LED_ON : LED_OFF,
+			((level & 16) > 0) ? LED_ON : LED_OFF);
+}
+
+void ShowColorLed(int led)
+{
+	if (led == LED_R)
+	{
+		P1OUT |= LED_R_BIT;
+		P1OUT &= ~LED_G_BIT;
+		P1OUT &= ~LED_B_BIT;
+	}
+
+	if (led == LED_G)
+	{
+		P1OUT &= ~LED_R_BIT;
+		P1OUT |= LED_G_BIT;
+		P1OUT &= ~LED_B_BIT;
+	}
+
+	if (led == LED_B)
+	{
+		P1OUT &= ~LED_R_BIT;
+		P1OUT &= ~LED_G_BIT;
+		P1OUT |= LED_B_BIT;
+	}
+
+	if (led == LED_NONE)
+	{
+		P1OUT &= ~LED_R_BIT;
+		P1OUT &= ~LED_G_BIT;
+		P1OUT &= ~LED_B_BIT;
+	}
 }
 
 void NextStep();
@@ -81,15 +112,23 @@ void NextStep()
 		// Przed rozpoczeciem gry mruganie diodami.
 		case STATE_SHOW_SEQUENCE:
 		{
-			ShowLevelOnYellowLeds();
-			gSequenceStep++;
-			if (gSequenceStep % 3 == 0)
-				P1OUT |= LED_R_BIT;
-			if (gSequenceStep % 3 == 1)
-				P1OUT |= LED_G_BIT;
-			if (gSequenceStep % 3 == 2)
-				P1OUT |= LED_B_BIT;
-			gTicksToNextStep = TIMER_SECOND;
+			if (!gIsBreak)
+			{
+				int ledToShow = gSequence[gSequenceStep++];
+				ShowColorLed(ledToShow + 1);
+				ShowLevelOnYellowLeds(gSequenceStep);
+				gTicksToNextStep = TIMER_SECOND * 2 / gSpeed;
+			}
+			else
+			{
+				ShowColorLed(LED_NONE);
+				gTicksToNextStep = TIMER_SECOND / gSpeed;
+			}
+
+			gIsBreak = (gIsBreak + 1) % 2;
+
+
+
 		}
 		break;
 	}
@@ -133,6 +172,12 @@ void ButtonPressed(int buttonNum)
 				if (gSpeed > 1)
 					gSpeed--;
 
+				ShowSpeedOnYellowLeds();
+			}
+
+			if (buttonNum == BUTTON_G)
+			{
+				gSpeed = 3;
 				ShowSpeedOnYellowLeds();
 			}
 

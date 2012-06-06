@@ -44,6 +44,12 @@
 #define BUTTON_B		3
 #define BUTTON_START	9
 
+#define LED_R		1
+#define LED_G		2
+#define LED_B		3
+#define LED_NONE	0
+
+
 
 #define LED_ON	1
 #define LED_OFF	2
