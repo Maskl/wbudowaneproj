@@ -1,18 +1,21 @@
-#define STATE_NULL -1
-#define STATE_BEFORE_START 0
-#define STATE_SHOW_SEQUENCE 1
-#define STATE_WAIT_FOR_PLAYER_REPEAT 2
-#define STATE_GAME_OVER 3
-#define STATE_WIN 4
-
 volatile int gState = STATE_NULL; // Aktualny stan w ktorym znajduje sie gra.
-volatile int gIsBreak = 0;
-volatile int gSequence[] = {0, 2, 1, 2, 2, 0, 1, 1, 2, 1, 2, 0, 2, 1, 1, 0, 1, 0}; // Sekwencja do pokazania, bedzie generowana.
+volatile int gIsBreak = 0; // Czy wyswietlana jest dioda czy przerwa pomiedzy nimi (w trakcie odtwarzania sekwencji).
+volatile int gSequence[LEVELS_NUM]; // Sekwencja do pokazania, bedzie generowana.
 volatile int gSequenceStep = 0; // Ktory etap sekwencji (wyswietlany lub wprowadza gracz).
 volatile int gLevel = 1; // Jak dluga sekwencje gracz bedzie musial powtorzyc.
+volatile int gSpeed = 3; // Szybkosc gry z przedzialu [1, 5].
 
-volatile int gSpeed = 3;
+void NextStep();
+void ConfigureNextState(int state);
 
+void GenerateSequenceTable()
+{
+	int i = 0;
+	for (i = 0; i < LEVELS_NUM; ++i)
+	{
+		gSequence[i] = rand() % 3 + LED_R;
+	}
+}
 
 void SetYellowLeds(int led1, int led2, int led3, int led4, int led5)
 {
@@ -94,10 +97,6 @@ void ShowColorLed(int led)
 	}
 }
 
-void NextStep();
-void ConfigureNextState(int state);
-
-
 /// Pomocnicza procedura - Ustawienie jaki ma byc kolejny krok gry.
 void ConfigureNextState(int state)
 {
@@ -166,7 +165,7 @@ void NextStep()
 					break;
 				}
 
-				ShowColorLed(ledToShow + 1);
+				ShowColorLed(ledToShow);
 				gTicksToNextStep = TIMER_SECOND * 2 / gSpeed;
 			}
 			else
@@ -216,8 +215,6 @@ void NextStep()
 }
 
 
-
-
 /// Reakcja na klikniecie przycisku.
 void ButtonPressed(int buttonNum)
 {
@@ -251,6 +248,7 @@ void ButtonPressed(int buttonNum)
 			{
 				gLevel = 1;
 				gSequenceStep = 0;
+				GenerateSequenceTable();
 				ConfigureNextState(STATE_SHOW_SEQUENCE);
 			}
 		}
@@ -265,7 +263,7 @@ void ButtonPressed(int buttonNum)
 				return;
 			}
 
-			int ledToSelect = gSequence[gSequenceStep++] + 1;
+			int ledToSelect = gSequence[gSequenceStep++];
 			int ledSelected;
 
 			if (buttonNum == BUTTON_R)
@@ -276,7 +274,6 @@ void ButtonPressed(int buttonNum)
 
 			if (buttonNum == BUTTON_B)
 				ledSelected = LED_B;
-
 
 			// Czy gracz nadusil odpowiedni przycisk?
 			if (ledToSelect == ledSelected)
