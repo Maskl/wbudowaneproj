@@ -2,7 +2,8 @@
 #define STATE_BEFORE_START 0
 #define STATE_SHOW_SEQUENCE 1
 #define STATE_WAIT_FOR_PLAYER_REPEAT 2
-#define STATE_LOOSE 3
+#define STATE_GAME_OVER 3
+#define STATE_WIN 4
 
 volatile int gState = STATE_NULL; // Aktualny stan w ktorym znajduje sie gra.
 volatile int gIsBreak = 0;
@@ -114,16 +115,27 @@ void ConfigureNextState(int state)
 		case STATE_SHOW_SEQUENCE:
 		{
 			gIsBreak = 0;
-			ShowLevelOnYellowLeds(gLevel);
+			ShowLevelOnYellowLeds(31);
 			gTicksToNextStep = TIMER_SECOND / 2;
 		}
 		break;
 
 		case STATE_WAIT_FOR_PLAYER_REPEAT:
 		{
+			ShowLevelOnYellowLeds(gLevel);
 			ShowColorLed(LED_NONE);
 			gTicksToNextStep = -1;
 			gSequenceStep = 0;
+		}
+
+		case STATE_GAME_OVER:
+		{
+			NextStep();
+		}
+
+		case STATE_WIN:
+		{
+			NextStep();
 		}
 	}
 }
@@ -170,6 +182,31 @@ void NextStep()
 		{
 			ShowColorLed(LED_NONE);
 			gTicksToNextStep = -1;
+		}
+		break;
+
+		case STATE_GAME_OVER:
+		{
+			int r = rand() % 3;
+			if (r == 0)
+				ShowColorLed(LED_R);
+			if (r == 1)
+				ShowColorLed(LED_G);
+			if (r == 2)
+				ShowColorLed(LED_B);
+
+			gTicksToNextStep = TIMER_SECOND / 30;
+		}
+		break;
+
+		case STATE_WIN:
+		{
+			if ((rand() % 2) == 1)
+				ShowColorLed(LED_G);
+			else
+				ShowColorLed(LED_NONE);
+
+			gTicksToNextStep = TIMER_SECOND / 10;
 		}
 		break;
 	}
@@ -244,13 +281,19 @@ void ButtonPressed(int buttonNum)
 				if (gSequenceStep >= gLevel)
 				{
 					gLevel++;
+					if (gLevel > LEVELS_NUM)
+					{
+						ConfigureNextState(STATE_WIN);
+						return;
+					}
+
 					gSequenceStep = 0;
 					ConfigureNextState(STATE_SHOW_SEQUENCE);
 				}
 			}
 			else
 			{
-			//	ConfigureNextState(STATE_BEFORE_START);
+				ConfigureNextState(STATE_GAME_OVER);
 			}
 		}
 		break;

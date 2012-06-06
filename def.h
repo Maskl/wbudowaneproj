@@ -55,6 +55,7 @@
 #define LED_OFF	2
 
 
+#define LEVELS_NUM 25
 
 
 
