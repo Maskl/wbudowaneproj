@@ -18,22 +18,22 @@ int main(void)
 	P1REN = P2REN = 0;
 
 	// Ustawienie diod LED (ustawienie pinow jako wyjsciowych + wyslanie jedynek na te piny).
-	P1DIR |= LED_R + LED_G + LED_B;
-	P1DIR |= LED_R + LED_G + LED_B;
+	P1DIR |= LED_R_BIT + LED_G_BIT + LED_B_BIT;
+	P1DIR |= LED_R_BIT + LED_G_BIT + LED_B_BIT;
 
-	LED_Y_1_DIR |= LED_Y_1;
-	LED_Y_2_DIR |= LED_Y_2;
-	LED_Y_3_DIR |= LED_Y_3;
-	LED_Y_4_DIR |= LED_Y_4;
-	LED_Y_5_DIR |= LED_Y_5;
+	LED_Y_1_DIR |= LED_Y_1_BIT;
+	LED_Y_2_DIR |= LED_Y_2_BIT;
+	LED_Y_3_DIR |= LED_Y_3_BIT;
+	LED_Y_4_DIR |= LED_Y_4_BIT;
+	LED_Y_5_DIR |= LED_Y_5_BIT;
 
 	// Ustawienie przyciskow (wlaczenie przerwan, [?]Enable Pull up / Pull down, [?]pull up).
-	P1IE  |= BUTTON_R + BUTTON_G + BUTTON_B;
-	P1REN |= BUTTON_R + BUTTON_G + BUTTON_B;
-	P1OUT |= BUTTON_R + BUTTON_G + BUTTON_B;
-	P2IE  |= BUTTON_START;
-	P2REN |= BUTTON_START;
-	P2OUT |= BUTTON_START;
+	P1IE  |= BUTTON_R_BIT + BUTTON_G_BIT + BUTTON_B_BIT;
+	P1REN |= BUTTON_R_BIT + BUTTON_G_BIT + BUTTON_B_BIT;
+	P1OUT |= BUTTON_R_BIT + BUTTON_G_BIT + BUTTON_B_BIT;
+	P2IE  |= BUTTON_START_BIT;
+	P2REN |= BUTTON_START_BIT;
+	P2OUT |= BUTTON_START_BIT;
 
 	// [?]Prawdopodobnie czesc z ponizszych jest zbedna - chociazby dlatego, ze wyrzucilem obsluge przerwan NMI (czymkolwiek to nie jest...).
 	// Enable NMI function of the RST pin
@@ -57,8 +57,8 @@ void clearButtons()
 {
 	P1IFG = 0;
 	P2IFG = 0;
-	P1OUT |= BUTTON_R + BUTTON_G + BUTTON_B;
-	P2OUT |= BUTTON_START;
+	P1OUT |= BUTTON_R_BIT + BUTTON_G_BIT + BUTTON_B_BIT;
+	P2OUT |= BUTTON_START_BIT;
 }
 
 /// Przerwanie odpalane po kliknieciu dowolnego przycisku z portu 1
@@ -73,27 +73,27 @@ __interrupt void port1_buttons(void)
 	}
 
 	// Obsluga przycisku - wyczyszczenie flagi przerwania, ustawienie czasu do kolejnego mozliwego klikniecia i odpalenie odpowiedniej funkcji obslugi.
-	if (P1IFG & BUTTON_R)
+	if (P1IFG & BUTTON_R_BIT)
 	{
 		clearButtons();
 		gTicksToEnableButton = TIME_TO_ENABLE_BUTTON;
-		ButtonPressed(1);
+		ButtonPressed(BUTTON_R);
 	}
 
 	// Obsluga drugiego przycisku.
-	if (P1IFG & BUTTON_G)
+	if (P1IFG & BUTTON_G_BIT)
 	{
 		clearButtons();
 		gTicksToEnableButton = TIME_TO_ENABLE_BUTTON;
-		ButtonPressed(2);
+		ButtonPressed(BUTTON_G);
 	}
 
 	// Obsluga drugiego przycisku.
-	if (P1IFG & BUTTON_B)
+	if (P1IFG & BUTTON_B_BIT)
 	{
 		clearButtons();
 		gTicksToEnableButton = TIME_TO_ENABLE_BUTTON;
-		ButtonPressed(3);
+		ButtonPressed(BUTTON_B);
 	}
 }
 
@@ -109,11 +109,11 @@ __interrupt void port2_buttons(void)
 	}
 
 	// Obsluga przycisku - wyczyszczenie flagi przerwania, ustawienie czasu do kolejnego mozliwego klikniecia i odpalenie odpowiedniej funkcji obslugi.
-	if (P2IFG & BUTTON_START)
+	if (P2IFG & BUTTON_START_BIT)
 	{
 		clearButtons();
 		gTicksToEnableButton = TIME_TO_ENABLE_BUTTON;
-		ButtonPressed(0);
+		ButtonPressed(BUTTON_START);
 	}
 }
 
@@ -121,12 +121,12 @@ __interrupt void port2_buttons(void)
 #pragma vector=WDT_VECTOR
 __interrupt void watchdog_timer(void)
 {
-	if (gTicksToNextStep > 0)
+	if (gTicksToNextStep >= 0)
 		gTicksToNextStep--;
 
 	if (gTicksToEnableButton > 0)
 		gTicksToEnableButton--;
 
-	if (gTicksToNextStep <= 0)
+	if (gTicksToNextStep == 0)
 		NextStep();
 }
