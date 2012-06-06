@@ -1,106 +1,123 @@
-#define WITHOUT_CHANGES -1
+#define STATE_NULL -1
 #define STATE_BEFORE_START 0
 #define STATE_SHOW_SEQUENCE 1
-#define STATE_SHOW_SEQUENCE_BREAK 2
 #define STATE_WAIT_FOR_PLAYER_REPEAT 3
 #define STATE_LOOSE 4
 
-volatile int gState = STATE_BEFORE_START; // Aktualny stan w ktorym znajduje sie gra.
+volatile int gState = STATE_NULL; // Aktualny stan w ktorym znajduje sie gra.
 
 volatile int gSequence[] = {0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0}; // Sekwencja do pokazania, bedzie generowana.
 volatile int gSequenceStep = 0; // Ktory etap sekwencji (wyswietlany lub wprowadza gracz).
 volatile int gLevel = 0; // Jak dluga sekwencje gracz bedzie musial powtorzyc.
 
-/// Pomocnicza procedura - Ustawienie jaki ma byc kolejny krok gry.
-void ConfigureNextState(int state, int ticksToNextStep)
+volatile int gSpeed = 3;
+
+
+void SetYellowLeds(int led1, int led2, int led3, int led4, int led5)
 {
-	gState = state;
-	gTicksToNextStep = ticksToNextStep;
+	if (led1 == LED_ON)
+		LED_Y_1_OUT |= LED_Y_1_BIT;
+	else if (led1 == LED_OFF)
+		LED_Y_1_OUT &= ~LED_Y_1_BIT;
+
+	if (led2 == LED_ON)
+		LED_Y_2_OUT |= LED_Y_2_BIT;
+	else if (led2 == LED_OFF)
+		LED_Y_2_OUT &= ~LED_Y_2_BIT;
+
+	if (led3 == LED_ON)
+		LED_Y_3_OUT |= LED_Y_3_BIT;
+	else if (led3 == LED_OFF)
+		LED_Y_3_OUT &= ~LED_Y_3_BIT;
+
+	if (led4 == LED_ON)
+		LED_Y_4_OUT |= LED_Y_4_BIT;
+	else if (led4 == LED_OFF)
+		LED_Y_4_OUT &= ~LED_Y_4_BIT;
+
+	if (led5 == LED_ON)
+		LED_Y_5_OUT |= LED_Y_5_BIT;
+	else if (led5 == LED_OFF)
+		LED_Y_5_OUT &= ~LED_Y_5_BIT;
 }
+
+
+void ShowSpeedOnYellowLeds()
+{
+	SetYellowLeds(
+			(gSpeed > 0) ? LED_ON : LED_OFF,
+			(gSpeed > 1) ? LED_ON : LED_OFF,
+			(gSpeed > 2) ? LED_ON : LED_OFF,
+			(gSpeed > 3) ? LED_ON : LED_OFF,
+			(gSpeed > 4) ? LED_ON : LED_OFF);
+}
+
+void ShowLevelOnYellowLeds()
+{
+	SetYellowLeds(
+			(gSpeed == 1) ? LED_ON : LED_OFF,
+			(gSpeed == 2) ? LED_ON : LED_OFF,
+			(gSpeed == 3) ? LED_ON : LED_OFF,
+			(gSpeed == 4) ? LED_ON : LED_OFF,
+			(gSpeed == 5) ? LED_ON : LED_OFF);
+}
+
+void NextStep();
+void ConfigureNextState(int state);
+
 
 /// Kolejne zdarzenie w logice gry - gdzies wewnatrz trzeba wywolac 'ConfigureNextState' by ponownie tu trafic za odpowiednia ilosc czasu.
 void NextStep()
 {
-	gTicksToNextStep = -1;
-	//if (buttonNum == 1)
-		P1OUT |= LED_R_BIT;
-
-	//if (buttonNum == 2)
-	//	P1OUT |= LED_G;
-
-	//if (buttonNum == 3)
-	//	P1OUT |= LED_B;
-
-	//if (buttonNum == 0)
-	//	P1OUT |= LED_Y_1;
-
-
-
-	return;
-
-	/*switch (gState)
+	switch (gState)
 	{
 		// Przed rozpoczeciem gry mruganie diodami.
-		case STATE_BEFORE_START:
+		case STATE_NULL:
 		{
-			P1OUT ^= LED_GREEN;
-			P1OUT ^= LED_RED;
-			ConfigureNextState(WITHOUT_CHANGES, TIMER_SECOND);
+			ConfigureNextState(STATE_BEFORE_START);
 		}
 		break;
 
-		// Pokazujemy kolejna diode z sekwencji i przechodzimy to stanu pauzy.
+		// Przed rozpoczeciem gry mruganie diodami.
 		case STATE_SHOW_SEQUENCE:
 		{
-			int whichOne = gSequence[gSequenceStep++];
-			if (whichOne == 0)
-				P1OUT = LED_0;
-			else
-				P1OUT = LED_1;
-
-			ConfigureNextState(STATE_SHOW_SEQUENCE_BREAK, TIMER_SECOND);
+			ShowLevelOnYellowLeds();
+			gSequenceStep++;
+			if (gSequenceStep % 3 == 0)
+				P1OUT |= LED_R_BIT;
+			if (gSequenceStep % 3 == 1)
+				P1OUT |= LED_G_BIT;
+			if (gSequenceStep % 3 == 2)
+				P1OUT |= LED_B_BIT;
+			gTicksToNextStep = TIMER_SECOND;
 		}
 		break;
+	}
 
-		// Przez chwile nie pokazujemy nic - trzeba zrobic przerwe pomiedzy kolejnymi wyswietlanymi diodami.
-		case STATE_SHOW_SEQUENCE_BREAK:
+	return;
+}
+
+
+/// Pomocnicza procedura - Ustawienie jaki ma byc kolejny krok gry.
+void ConfigureNextState(int state)
+{
+	gState = state;
+
+	switch (state)
+	{
+		case STATE_BEFORE_START:
 		{
-			if (gSequenceStep <= gLevel)
-			{
-				// Chwila przerwy i pokazujemy kolejna diode.
-				P1OUT = 0;
-				ConfigureNextState(STATE_SHOW_SEQUENCE, TIMER_SECOND);
-			}
-			else
-			{
-				// Jezeli pokazalismy cala sekwencje to konczymy.
-				P1OUT = 0;
-				gSequenceStep = 0;
-				ConfigureNextState(STATE_WAIT_FOR_PLAYER_REPEAT, TIMER_SECOND);
-			}
+			ShowSpeedOnYellowLeds();
+			gTicksToNextStep = -1;
 		}
 		break;
 
-		// Czekamy na gracza - dla przykladu mrugam szybko diodami debugowymi i wylaczam duze diody (zapalane po naduszeniu przycisku).
-		case STATE_WAIT_FOR_PLAYER_REPEAT:
+		case STATE_SHOW_SEQUENCE:
 		{
-			P1OUT &= ~LED_0;
-			P1OUT &= ~LED_1;
-			P1OUT ^= LED_GREEN;
-			P1OUT ^= LED_RED;
-			ConfigureNextState(WITHOUT_CHANGES, TIMER_100MS * 5);
+			NextStep();
 		}
 		break;
-
-		// Stan przegranej - szybkie mruganie czerwona dioda.
-		case STATE_LOOSE:
-		{
-			P1OUT &= ~LED_GREEN;
-			P1OUT ^= LED_RED;
-			ConfigureNextState(WITHOUT_CHANGES, TIMER_100MS);
-		}
-		break;
-	}*/
+	}
 }
 
 
@@ -111,51 +128,29 @@ void ButtonPressed(int buttonNum)
 	{
 		case STATE_BEFORE_START:
 		{
-			// todo: losowanie tablicy
-			gLevel = 0;
-			gSequenceStep = 0;
-
 			if (buttonNum == BUTTON_R)
-				LED_Y_1_OUT |= LED_Y_1_BIT;
+			{
+				if (gSpeed > 1)
+					gSpeed--;
+
+				ShowSpeedOnYellowLeds();
+			}
 
 			if (buttonNum == BUTTON_B)
-				LED_Y_2_OUT |= LED_Y_2_BIT;
+			{
+				if (gSpeed < 5)
+					gSpeed++;
+
+				ShowSpeedOnYellowLeds();
+			}
 
 			if (buttonNum == BUTTON_START)
-				ConfigureNextState(STATE_SHOW_SEQUENCE, TIMER_SECOND);
+			{
+				gLevel = 0;
+				gSequenceStep = 0;
+				ConfigureNextState(STATE_SHOW_SEQUENCE);
+			}
 		}
 		break;
-
-		// Etap powtarzania przez gracza - sprawdzamy czy naduszono poprawny przycisk.
-	/*	case STATE_WAIT_FOR_PLAYER_REPEAT:
-		{
-			// Zapalamy na moment duza diode - by widziec czy przycisk sie wcisnal poprawnie.
-			if (buttonNum == 0)
-				P1OUT = LED_0;
-			else
-				P1OUT = LED_1;
-
-			// Sprawdzenie czy wybrano odpowiedni przycisk.
-			if (buttonNum == gSequence[gSequenceStep])
-			{
-				// Dobrze. Czy juz powtorzylismy cala sekwencje?
-				if (++gSequenceStep > gLevel)
-				{
-					// Tak. Wydluzamy sekwencje o jedno mrugniecie dioda.
-					++gLevel;
-					gSequenceStep = 0;
-					ConfigureNextState(STATE_SHOW_SEQUENCE_BREAK, TIMER_100MS);
-				}
-
-				// Udalo sie dobrze nadusic przycisk, ale to jeszcze nie koniec powtarzania sekwencji.
-				ConfigureNextState(WITHOUT_CHANGES, TIMER_100MS);
-			}
-			else
-			{
-				// Przegrana.
-				ConfigureNextState(STATE_LOOSE, 0);
-			}
-		}
-		break;*/
 	}
 }

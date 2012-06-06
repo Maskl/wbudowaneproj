@@ -121,7 +121,7 @@ __interrupt void port2_buttons(void)
 #pragma vector=WDT_VECTOR
 __interrupt void watchdog_timer(void)
 {
-	if (gTicksToNextStep >= 0)
+	if (gTicksToNextStep > 0)
 		gTicksToNextStep--;
 
 	if (gTicksToEnableButton > 0)

@@ -1,10 +1,10 @@
 #include "msp430g2553.h"
 #include "stdlib.h"
 
-#define BUTTON_R_BIT	BIT5
-#define BUTTON_G_BIT	BIT4
-#define BUTTON_B_BIT	BIT3
-
+// Bity przyciskow
+#define BUTTON_R_BIT		BIT5
+#define BUTTON_G_BIT		BIT4
+#define BUTTON_B_BIT		BIT3
 #define BUTTON_START_BIT	BIT5
 
 #define LED_R_BIT		BIT2
@@ -45,11 +45,12 @@
 #define BUTTON_START	9
 
 
+#define LED_ON	1
+#define LED_OFF	2
 
 
 
 
 
-
-volatile int gTicksToNextStep = -1;
+volatile int gTicksToNextStep = 0;
 volatile int gTicksToEnableButton = 0;
