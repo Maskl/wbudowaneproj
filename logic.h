@@ -8,6 +8,7 @@ volatile int gSpeed = 3; // Szybkosc gry z przedzialu [1, 5].
 void NextStep();
 void ConfigureNextState(int state);
 
+// Generacja tablicy z sekwencja, wykonywana przy kazdym ponownym uruchomieniu aplikacji
 void GenerateSequenceTable()
 {
 	int i = 0;
@@ -17,6 +18,8 @@ void GenerateSequenceTable()
 	}
 }
 
+// Ustawianie wartosci na zoltych diodach (wynik, aktualny poziom)
+// Jako parametry nalezy podac LED_ON, LED_OFF lub 0 (jezeli stan diody nie ma zostac zmieniony)
 void SetYellowLeds(int led1, int led2, int led3, int led4, int led5)
 {
 	if (led1 == LED_ON)
@@ -45,17 +48,18 @@ void SetYellowLeds(int led1, int led2, int led3, int led4, int led5)
 		LED_Y_5_OUT &= ~LED_Y_5_BIT;
 }
 
-
-void ShowSpeedOnYellowLeds()
+// Procedura wyswietlajaca wybrana szybkosc gry na zoltych diodach
+void ShowSpeedOnYellowLeds(int speed)
 {
 	SetYellowLeds(
-			(gSpeed > 0) ? LED_ON : LED_OFF,
-			(gSpeed > 1) ? LED_ON : LED_OFF,
-			(gSpeed > 2) ? LED_ON : LED_OFF,
-			(gSpeed > 3) ? LED_ON : LED_OFF,
-			(gSpeed > 4) ? LED_ON : LED_OFF);
+			(speed > 0) ? LED_ON : LED_OFF,
+			(speed > 1) ? LED_ON : LED_OFF,
+			(speed > 2) ? LED_ON : LED_OFF,
+			(speed > 3) ? LED_ON : LED_OFF,
+			(speed > 4) ? LED_ON : LED_OFF);
 }
 
+// Procedura wyswietlajaca aktualny poziom na zoltych diodach (binarnie)
 void ShowLevelOnYellowLeds(int level)
 {
 	SetYellowLeds(
@@ -66,6 +70,7 @@ void ShowLevelOnYellowLeds(int level)
 			((level & 16) > 0) ? LED_ON : LED_OFF);
 }
 
+// Zapalenie jednej z kolorowych diod, wylaczenie pozostalych
 void ShowColorLed(int led)
 {
 	if (led == LED_R)
@@ -97,21 +102,24 @@ void ShowColorLed(int led)
 	}
 }
 
-/// Pomocnicza procedura - Ustawienie jaki ma byc kolejny krok gry.
+/// Inicjalizacja kolejnyego stanu gry
 void ConfigureNextState(int state)
 {
 	gState = state;
 
 	switch (state)
 	{
+		// Stan ustawiania predkosci gry, czekamy wylacznie na przerwania od przyciskow.
 		case STATE_BEFORE_START:
 		{
 			ShowColorLed(LED_NONE);
-			ShowSpeedOnYellowLeds();
+			ShowSpeedOnYellowLeds(gSpeed);
 			gTicksToNextStep = -1;
 		}
 		break;
 
+		// Poczatek pokazywania sekwencji, ktora gracz ma powtorzyc.
+		// Zapalenie wszystkich zoltych diod. Pol sekundy przerwy na poczatku.
 		case STATE_SHOW_SEQUENCE:
 		{
 			gIsBreak = 0;
@@ -120,6 +128,8 @@ void ConfigureNextState(int state)
 		}
 		break;
 
+		// Sekwencja zostala pokazana, teraz gracz musi ja powtorzyc.
+		// Na zoltych diodach pokazanie aktualnego poziomu gry, czekamy na przerwania od przyciskow.
 		case STATE_WAIT_FOR_PLAYER_REPEAT:
 		{
 			ShowLevelOnYellowLeds(gLevel);
@@ -128,11 +138,13 @@ void ConfigureNextState(int state)
 			gSequenceStep = 0;
 		}
 
+		// Przegrana, przechodzimy od razu do mrugania diodami.
 		case STATE_GAME_OVER:
 		{
 			NextStep();
 		}
 
+		// To samo robimy w przypadku wygranej.
 		case STATE_WIN:
 		{
 			NextStep();
@@ -140,36 +152,44 @@ void ConfigureNextState(int state)
 	}
 }
 
-/// Kolejne zdarzenie w logice gry - gdzies wewnatrz trzeba wywolac 'ConfigureNextState' by ponownie tu trafic za odpowiednia ilosc czasu.
+/// Kolejne zdarzenie w logice gry.
 void NextStep()
 {
 	switch (gState)
 	{
-		// Przed rozpoczeciem gry mruganie diodami.
+		// Stan "zerowy" - przejscie do stanu ustawiania predkosci gry.
 		case STATE_NULL:
 		{
 			ConfigureNextState(STATE_BEFORE_START);
 		}
 		break;
 
-		// Przed rozpoczeciem gry mruganie diodami.
+		// Pokazywanie sekwencji do powtorzenia na kolorowych diodach LED.
 		case STATE_SHOW_SEQUENCE:
 		{
+			// W tym stanie mamy serie zapalen kolejnych diod LED.  Jednak aby gracz mogl
+			// wygodnie grac nalezy pomiedzy zapaleniami kolejnych diod zrobic chwile przerwy
+			// podczas ktorej wszystkie diody beda wylaczone.
+			// (Inaczej gracz moze nie wiedziec czy ma nadusic przycisk 2 czy 3 razu).
 			if (!gIsBreak)
 			{
+				// Odczytanie ktora diode musimy zapalic
 				int ledToShow = gSequence[gSequenceStep++];
 
+				// Ewentualnie konczymy pokazywanie sekwencji jezeli pokazalismy juz caly ciag.
 				if (gSequenceStep > gLevel)
 				{
 					ConfigureNextState(STATE_WAIT_FOR_PLAYER_REPEAT);
 					break;
 				}
 
+				// Zapalenie odpowiedniej diody i poczekanie odpowiedniej ilosci czasu.
 				ShowColorLed(ledToShow);
 				gTicksToNextStep = TIMER_SECOND * 2 / gSpeed;
 			}
 			else
 			{
+				// Wylaczenie diod i poczekanie co najwyzej sekundy.
 				ShowColorLed(LED_NONE);
 				gTicksToNextStep = TIMER_SECOND / gSpeed;
 			}
@@ -178,6 +198,9 @@ void NextStep()
 		}
 		break;
 
+		// W stanie powtarzania przez gracza sekwencji ponizszy blok sluzy wylacznie
+		// do zgaszenia wszystkich diod (w zalozeniach po naduszeniu przycisku na
+		// moment miala sie zapalic odpowiadajaca mu kolorowa dioda).
 		case STATE_WAIT_FOR_PLAYER_REPEAT:
 		{
 			ShowColorLed(LED_NONE);
@@ -185,6 +208,7 @@ void NextStep()
 		}
 		break;
 
+		// Stan przegranej - losowe mruganie wszystkimi kolorowymi diodami.
 		case STATE_GAME_OVER:
 		{
 			int r = rand() % 3;
@@ -199,6 +223,7 @@ void NextStep()
 		}
 		break;
 
+		// Stan wygranej - mruganie zielona dioda.
 		case STATE_WIN:
 		{
 			if ((rand() % 2) == 1)
@@ -215,11 +240,12 @@ void NextStep()
 }
 
 
-/// Reakcja na klikniecie przycisku.
+/// Reakcja na nacisniecie przycisku.
 void ButtonPressed(int buttonNum)
 {
 	switch (gState)
 	{
+		// Ustawianie szybkosci gry
 		case STATE_BEFORE_START:
 		{
 			if (buttonNum == BUTTON_R)
@@ -227,13 +253,13 @@ void ButtonPressed(int buttonNum)
 				if (gSpeed > 1)
 					gSpeed--;
 
-				ShowSpeedOnYellowLeds();
+				ShowSpeedOnYellowLeds(gSpeed);
 			}
 
 			if (buttonNum == BUTTON_G)
 			{
 				gSpeed = 3;
-				ShowSpeedOnYellowLeds();
+				ShowSpeedOnYellowLeds(gSpeed);
 			}
 
 			if (buttonNum == BUTTON_B)
@@ -241,9 +267,10 @@ void ButtonPressed(int buttonNum)
 				if (gSpeed < 5)
 					gSpeed++;
 
-				ShowSpeedOnYellowLeds();
+				ShowSpeedOnYellowLeds(gSpeed);
 			}
 
+			// Rozpoczecie nowej gry.
 			if (buttonNum == BUTTON_START)
 			{
 				gLevel = 1;
@@ -254,54 +281,62 @@ void ButtonPressed(int buttonNum)
 		}
 		break;
 
-		// Przed rozpoczeciem gry mruganie diodami.
+		// Stan powtarzania sekwencji przez gracza.
 		case STATE_WAIT_FOR_PLAYER_REPEAT:
 		{
+			// Restart gry.
 			if (buttonNum == BUTTON_START)
 			{
 				ConfigureNextState(STATE_BEFORE_START);
 				return;
 			}
 
+			// Odczytanie diody, ktora powinna byc wybrana.
 			int ledToSelect = gSequence[gSequenceStep++];
-			int ledSelected;
 
+			// Oraz tej ktora faktycznie zostala wybrana.
+			int ledSelected;
 			if (buttonNum == BUTTON_R)
 				ledSelected = LED_R;
-
 			if (buttonNum == BUTTON_G)
 				ledSelected = LED_G;
-
 			if (buttonNum == BUTTON_B)
 				ledSelected = LED_B;
 
 			// Czy gracz nadusil odpowiedni przycisk?
 			if (ledToSelect == ledSelected)
 			{
+				// Zapalam na 0.2 sekundy wybrana diode.
 				ShowColorLed(ledSelected);
 				gTicksToNextStep = TIMER_SECOND / 5;
 
-				// Dodatkowo prowadzil juz cala sekwencje.
+				// Czy dodatkowo wprowadzil juz cala sekwencje?
 				if (gSequenceStep >= gLevel)
 				{
+					// Czyli wchodzimy na wyzszy poziom
 					gLevel++;
+
+					// Oraz ewentualnie wygrywamy
 					if (gLevel > LEVELS_NUM)
 					{
 						ConfigureNextState(STATE_WIN);
 						return;
 					}
 
+					// A jezeli nie wygrywamy to pokazujemy kolejna, dluzsza, sekwencje.
 					gSequenceStep = 0;
 					ConfigureNextState(STATE_SHOW_SEQUENCE);
 				}
 			}
 			else
 			{
+				// Gracz wybral zly przycisk - przegrana.
 				ConfigureNextState(STATE_GAME_OVER);
 			}
 		}
 		break;
 
+		// W pozostalych stanach naduszenie przycisku w gornym - prawym rogu restartuje gre.
 		default:
 		{
 			if (buttonNum == BUTTON_START)

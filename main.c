@@ -35,11 +35,7 @@ int main(void)
 	P2REN |= BUTTON_START_BIT;
 	P2OUT |= BUTTON_START_BIT;
 
-	// [?]Prawdopodobnie czesc z ponizszych jest zbedna - chociazby dlatego, ze wyrzucilem obsluge przerwan NMI (czymkolwiek to nie jest...).
-	// Enable NMI function of the RST pin
-	// WDTTMSEL = Interval timer mode
-	// clock source is SMCLK (1MHz or 1000000Hz)
-	// Interval is clock /64 (15625 interrupts per second)
+	// Ustawienie watchdoga
 	WDTCTL = WDTPW + WDTNMI + WDTTMSEL + WDTCNTCL + WDTIS1 + WDTIS0;
 	IE1 |= WDTIE;
 
@@ -53,6 +49,7 @@ int main(void)
 	}
 }
 
+// Procedura czyszczaca flagi przerwan na wszystkich przyciskach
 void clearButtons()
 {
 	P1IFG = 0;
@@ -72,7 +69,8 @@ __interrupt void port1_buttons(void)
 		return;
 	}
 
-	// Obsluga przycisku - wyczyszczenie flagi przerwania, ustawienie czasu do kolejnego mozliwego klikniecia i odpalenie odpowiedniej funkcji obslugi.
+	// Obsluga przycisku R - wyczyszczenie flagi przerwania, ustawienie czasu do
+	// kolejnego mozliwego klikniecia i odpalenie odpowiedniej funkcji obslugi.
 	if (P1IFG & BUTTON_R_BIT)
 	{
 		clearButtons();
@@ -80,7 +78,7 @@ __interrupt void port1_buttons(void)
 		ButtonPressed(BUTTON_R);
 	}
 
-	// Obsluga drugiego przycisku.
+	// Obsluga drugiego przycisku (G)
 	if (P1IFG & BUTTON_G_BIT)
 	{
 		clearButtons();
@@ -88,7 +86,7 @@ __interrupt void port1_buttons(void)
 		ButtonPressed(BUTTON_G);
 	}
 
-	// Obsluga drugiego przycisku.
+	// Obsluga trzeciego przycisku (B)
 	if (P1IFG & BUTTON_B_BIT)
 	{
 		clearButtons();
@@ -108,7 +106,7 @@ __interrupt void port2_buttons(void)
 		return;
 	}
 
-	// Obsluga przycisku - wyczyszczenie flagi przerwania, ustawienie czasu do kolejnego mozliwego klikniecia i odpalenie odpowiedniej funkcji obslugi.
+	// Obsluga przycisku START/RESTART
 	if (P2IFG & BUTTON_START_BIT)
 	{
 		clearButtons();
@@ -121,11 +119,13 @@ __interrupt void port2_buttons(void)
 #pragma vector=WDT_VECTOR
 __interrupt void watchdog_timer(void)
 {
-	if (gTicksToNextStep > 0)
-		gTicksToNextStep--;
-
+	// Dekrementuje zmienna uniemozliwiajaca zbyt czeste naciskanie przyciskow (eliminacja drgan).
 	if (gTicksToEnableButton > 0)
 		gTicksToEnableButton--;
+
+	// Wywolywanie obslugi kolejnego zdarzenia po wyznaczonej liczbie taktow zegara.
+	if (gTicksToNextStep > 0)
+		gTicksToNextStep--;
 
 	if (gTicksToNextStep == 0)
 		NextStep();

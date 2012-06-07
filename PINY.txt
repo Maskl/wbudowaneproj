@@ -14,7 +14,3 @@ P2.3 - DIODA ŻÓŁTA 2 (HDD LED BIAŁY)
 P2.4 - DIODA ŻÓŁTA 3 (HDD LED CZERWONY)
 P2.1 - DIODA ŻÓŁTA 4 (drugi kabelek w tasmie)
 P2.0 - DIODA ŻÓŁTA 5 (drugi kabelek w tasmie)
-
-4
-3
-5
